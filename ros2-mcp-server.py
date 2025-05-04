@@ -14,7 +14,7 @@ class ROS2MCPNode(Node):
         self.pub_cmd_vel = self.create_publisher(Twist, '/cmd_vel', 10)
         
         self.odom_data = None
-        self.odom_sub = self.create_subscription(
+        self.sub_odom = self.create_subscription(
             Odometry,
             '/odom',
             self.odom_callback,
