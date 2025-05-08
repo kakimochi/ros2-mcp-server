@@ -86,8 +86,6 @@ To use this server with Claude or other MCP clients, you need to configure it as
        "run",
        "--python",
        "3.10",
-       "--env",
-       "ROS_LOG_DIR=/tmp",
        "bash",
        "-c",
        "source /opt/ros/humble/setup.bash && python3 /path/to/ros2-mcp-server/ros2-mcp-server.py"
@@ -117,8 +115,6 @@ To use this server with Claude or other MCP clients, you need to configure it as
        "run",
        "--python",
        "3.10",
-       "--env",
-       "ROS_LOG_DIR=/tmp",
        "bash",
        "-c",
        "source /opt/ros/humble/setup.bash && python3 /path/to/ros2-mcp-server/ros2-mcp-server.py"
