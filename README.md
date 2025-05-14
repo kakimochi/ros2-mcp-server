@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/kakimochi-ros2-mcp-server-badge.png)](https://mseep.ai/app/kakimochi-ros2-mcp-server)
+
 # ros2-mcp-server
 
 `ros2-mcp-server` is a Python-based server that integrates the Model Context Protocol (MCP) with ROS 2, enabling AI assistants to control robots via ROS 2 topics. It processes commands through FastMCP and runs as a ROS 2 node, publishing `geometry_msgs/Twist` messages to the `/cmd_vel` topic to control robot movement.
