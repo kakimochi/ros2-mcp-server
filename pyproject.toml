@@ -1,10 +1,11 @@
 [project]
 name = "ros2-mcp-server"
 version = "0.1.0"
-description = "Add your description here"
+description = "ROS 2 MCP Server with rosbag2 recording capability"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "fastmcp",
     "numpy",
+    "rosbag2_py",
 ]
