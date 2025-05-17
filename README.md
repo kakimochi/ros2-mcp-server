@@ -8,6 +8,7 @@ This implementation supports commands like "move forward at 0.2 m/s for 5 second
 - **MCP Integration**: Uses FastMCP to handle commands from MCP clients (e.g., Claude).
 - **ROS 2 Native**: Operates as a ROS 2 node, directly publishing to `/cmd_vel`.
 - **Time-Based Control**: Supports duration-based movement commands (e.g., move for a specified time and stop).
+- **Battery Monitoring**: Provides battery level information as a percentage via the standard `/battery_state` topic.
 - **Asynchronous Processing**: Combines FastMCP's `asyncio` with ROS 2's event loop for efficient operation.
 
 ## Prerequisites
@@ -134,12 +135,35 @@ Once the MCP server is configured, you can use Claude to send commands to the ro
    ```
 
 2. **Direct Tool Usage**:
-   You can also use the `move_robot` tool directly:
+   You can use the available tools directly:
+   
+   a. Move the robot using the `move_robot` tool:
    ```json
    {
      "linear": [0.2, 0.0, 0.0],
      "angular": [0.0, 0.0, 0.0],
      "duration": 5.0
+   }
+   ```
+   
+   b. Get the battery level using the `get_battery_level` tool:
+   ```
+   Please check the robot's battery level.
+   ```
+   
+   The response will include the battery percentage and additional battery information if available:
+   ```json
+   {
+     "percentage": 75,
+     "voltage": 12.3,
+     "temperature": 25.0,
+     "current": 1.2,
+     "charge": 4.5,
+     "capacity": 6.0,
+     "design_capacity": 6.0,
+     "power_supply_status": 1,
+     "power_supply_health": 1,
+     "power_supply_technology": 1
    }
    ```
 
@@ -186,8 +210,8 @@ ros2-mcp-server/
 ```
 
 ## Limitations
-- **Single Topic**: Currently supports `/cmd_vel` with `Twist` messages. Extend `ros2-mcp-server.py` for other topics or services.
-- **Basic Commands**: Currently supports simple movement commands. More complex behaviors would require additional implementation.
+- **Limited Topics**: Currently supports `/cmd_vel` with `Twist` messages and `/battery_state` with `BatteryState` messages. Extend `ros2-mcp-server.py` for other topics or services.
+- **Basic Commands**: Currently supports simple movement commands and battery level monitoring. More complex behaviors would require additional implementation.
 
 ## License
 
