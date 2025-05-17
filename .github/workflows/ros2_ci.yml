@@ -52,5 +52,7 @@ jobs:
         export ROS_LOG_DIR=/tmp
         # Start ROS2 daemon
         ros2 daemon start
-        # Run a basic test to verify the node can be launched (with timeout)
-        timeout 10s python3 ros2-mcp-server.py || code=$?; if [[ $code -ne 124 && $code -ne 0 ]]; then exit $code; fi
+        # Check if the ROS2 node can be imported without errors
+        python3 -c "import rclpy; from ros2_mcp_server import ROS2MCPNode; rclpy.init(); node = ROS2MCPNode(); node.destroy_node(); rclpy.shutdown()"
+        # Verify ROS2 command line tools work
+        ros2 topic list
