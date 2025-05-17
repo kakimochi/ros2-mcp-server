@@ -23,7 +23,8 @@ WORKDIR /ros2_ws
 RUN mkdir -p /ros2_ws/src
 
 # Install Python dependencies
-RUN pip3 install uv fastmcp numpy flake8
+RUN python3 -m pip install --upgrade pip && \
+    python3 -m pip install uv fastmcp numpy flake8
 
 # Set the entrypoint
 ENTRYPOINT ["/bin/bash", "-c"]

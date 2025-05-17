@@ -21,39 +21,36 @@ jobs:
         apt-get update && apt-get install -y python3-pip
         python3 -m pip install --upgrade pip
         python3 -m pip install uv
-        uv venv --python /usr/bin/python3.10
-        source .venv/bin/activate
-        uv pip install -e .
+        python3 -m uv pip install -e .
+        python3 -m uv pip install flake8
 
     - name: Setup ROS2 environment
       shell: bash
       run: |
-        source /opt/ros/humble/setup.bash
+        echo "PYTHONPATH=/opt/ros/humble/lib/python3.10/site-packages:$PYTHONPATH" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=/opt/ros/humble/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
         echo "ROS_DISTRO=humble" >> $GITHUB_ENV
-        echo "PYTHONPATH=$PYTHONPATH:/opt/ros/humble/lib/python3.10/site-packages" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/ros/humble/lib" >> $GITHUB_ENV
 
     - name: Run linting
       shell: bash
       run: |
-        source .venv/bin/activate
-        python3 -m pip install flake8
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        source /opt/ros/humble/setup.bash
+        python3 -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 
     - name: Run unit tests
       shell: bash
       run: |
-        source .venv/bin/activate
         source /opt/ros/humble/setup.bash
-        # Add unit test commands here
-        # Example: python -m pytest tests/
+        # Add unit test commands here once test files are added
+        # python3 -m pytest tests/
 
     - name: Test ROS2 node functionality
       shell: bash
       run: |
-        source .venv/bin/activate
         source /opt/ros/humble/setup.bash
+        # Set ROS log directory to prevent permission issues
+        export ROS_LOG_DIR=/tmp
         # Start ROS2 daemon
         ros2 daemon start
-        # Run a basic test to verify the node can be launched
+        # Run a basic test to verify the node can be launched (with timeout)
         timeout 10s python3 ros2-mcp-server.py || code=$?; if [[ $code -ne 124 && $code -ne 0 ]]; then exit $code; fi
