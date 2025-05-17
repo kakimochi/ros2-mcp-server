@@ -8,6 +8,7 @@ This implementation supports commands like "move forward at 0.2 m/s for 5 second
 - **MCP Integration**: Uses FastMCP to handle commands from MCP clients (e.g., Claude).
 - **ROS 2 Native**: Operates as a ROS 2 node, directly publishing to `/cmd_vel`.
 - **Time-Based Control**: Supports duration-based movement commands (e.g., move for a specified time and stop).
+- **Position Tracking**: Provides robot position information via the standard `/odom` topic.
 - **Asynchronous Processing**: Combines FastMCP's `asyncio` with ROS 2's event loop for efficient operation.
 
 ## Prerequisites
@@ -134,12 +135,46 @@ Once the MCP server is configured, you can use Claude to send commands to the ro
    ```
 
 2. **Direct Tool Usage**:
-   You can also use the `move_robot` tool directly:
+   You can use the available tools directly:
+   
+   a. Move the robot using the `move_robot` tool:
    ```json
    {
      "linear": [0.2, 0.0, 0.0],
      "angular": [0.0, 0.0, 0.0],
      "duration": 5.0
+   }
+   ```
+   
+   b. Get the robot's position using the `get_position` tool:
+   ```
+   Please tell me the robot's current position.
+   ```
+   
+   The response will include the position coordinates and orientation information:
+   ```json
+   {
+     "position": {
+       "x": 1.23,
+       "y": 4.56,
+       "z": 0.0
+     },
+     "orientation": {
+       "x": 0.0,
+       "y": 0.0,
+       "z": 0.707,
+       "w": 0.707
+     },
+     "linear_velocity": {
+       "x": 0.2,
+       "y": 0.0,
+       "z": 0.0
+     },
+     "angular_velocity": {
+       "x": 0.0,
+       "y": 0.0,
+       "z": 0.0
+     }
    }
    ```
 
@@ -186,8 +221,8 @@ ros2-mcp-server/
 ```
 
 ## Limitations
-- **Single Topic**: Currently supports `/cmd_vel` with `Twist` messages. Extend `ros2-mcp-server.py` for other topics or services.
-- **Basic Commands**: Currently supports simple movement commands. More complex behaviors would require additional implementation.
+- **Limited Topics**: Currently supports `/cmd_vel` with `Twist` messages and `/odom` with `Odometry` messages. Extend `ros2-mcp-server.py` for other topics or services.
+- **Basic Commands**: Currently supports simple movement commands and position tracking. More complex behaviors would require additional implementation.
 
 ## License
 
