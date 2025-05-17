@@ -1,0 +1,60 @@
+name: ROS2 CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    container:
+      image: osrf/ros:humble-desktop
+      
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Python environment
+      shell: bash
+      run: |
+        apt-get update && apt-get install -y python3-pip
+        python3 -m pip install --upgrade pip
+        python3 -m pip install uv
+        python3 -m uv pip install -e .
+        python3 -m uv pip install flake8
+
+    - name: Setup ROS2 environment
+      shell: bash
+      run: |
+        echo "PYTHONPATH=/opt/ros/humble/lib/python3.10/site-packages:$PYTHONPATH" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=/opt/ros/humble/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "ROS_DISTRO=humble" >> $GITHUB_ENV
+
+    - name: Run linting
+      shell: bash
+      run: |
+        source /opt/ros/humble/setup.bash
+        python3 -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+    - name: Run unit tests
+      shell: bash
+      run: |
+        source /opt/ros/humble/setup.bash
+        # Add unit test commands here once test files are added
+        # python3 -m pytest tests/
+
+    - name: Test ROS2 node functionality
+      shell: bash
+      run: |
+        source /opt/ros/humble/setup.bash
+        # Set ROS log directory to prevent permission issues
+        export ROS_LOG_DIR=/tmp
+        # Start ROS2 daemon
+        ros2 daemon start
+        # Verify ROS2 command line tools work
+        ros2 topic list
+        # Check if the ROS2 script can be parsed without errors
+        python3 -c "import sys; sys.path.append('.'); import rclpy"
+        # Check if the script can be parsed without errors
+        python3 -m py_compile ros2-mcp-server.py
