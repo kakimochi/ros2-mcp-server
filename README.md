@@ -63,7 +63,7 @@ This implementation supports commands like "move forward at 0.2 m/s for 5 second
 
 6. **Install Dependencies**:
    ```bash
-   uv pip install -e .
+   uv install -e .
    ```
 
 ## MCP Server Configuration
@@ -84,9 +84,11 @@ To use this server with Claude or other MCP clients, you need to configure it as
        "--directory",
        "/path/to/ros2-mcp-server",
        "run",
+       "--python",
+       "3.10",
        "bash",
        "-c",
-       "export ROS_LOG_DIR=/tmp && source /opt/ros/humble/setup.bash && python3 /path/to/ros2-mcp-server/ros2-mcp-server.py"
+       "source /opt/ros/humble/setup.bash && python3 /path/to/ros2-mcp-server/ros2-mcp-server.py"
      ],
      "transportType": "stdio"
    }
@@ -111,9 +113,11 @@ To use this server with Claude or other MCP clients, you need to configure it as
        "--directory",
        "/path/to/ros2-mcp-server",
        "run",
+       "--python",
+       "3.10",
        "bash",
        "-c",
-       "export ROS_LOG_DIR=/tmp && source /opt/ros/humble/setup.bash && python3 /path/to/ros2-mcp-server/ros2-mcp-server.py"
+       "source /opt/ros/humble/setup.bash && python3 /path/to/ros2-mcp-server/ros2-mcp-server.py"
      ],
      "transportType": "stdio"
    }
@@ -169,11 +173,23 @@ Once the MCP server is configured, you can use Claude to send commands to the ro
    - The server logs movement commands and stop commands.
    - Claude receives a response like: `"Successfully moved for 5.0 seconds and stopped"`.
 
+## Using uv for Dependency Management
+
+This project uses [uv](https://github.com/astral-sh/uv), a fast Python package installer and resolver. uv offers several advantages:
+
+- **Speed**: uv is significantly faster than pip for installing packages
+- **Reliability**: Better dependency resolution to avoid conflicts
+- **Virtual Environment Management**: Simplified creation and management of virtual environments
+- **Modern Workflow**: Direct support for pyproject.toml without requirements.txt
+
+All installation and execution commands in this project use uv to ensure consistent dependency management and execution environment.
+
 ## Troubleshooting
 
 - **ROS 2 Logging Errors**: If you encounter logging directory errors, ensure the `ROS_LOG_DIR` environment variable is set to a writable directory (e.g., `/tmp`).
 - **Python Version Mismatch**: Ensure you're using Python 3.10, as ROS 2 Humble is built for this version.
 - **Connection Errors**: If Claude reports "Connection closed" errors, check that the MCP server configuration is correct and that all dependencies are installed.
+- **uv Installation**: If you don't have uv installed, you can install it with `pip install uv` or follow the [official installation instructions](https://github.com/astral-sh/uv#installation).
 
 ## Directory Structure
 ```
