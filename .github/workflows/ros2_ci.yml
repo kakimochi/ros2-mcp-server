@@ -29,7 +29,9 @@ jobs:
       shell: bash
       run: |
         source /opt/ros/humble/setup.bash
-        echo "source /opt/ros/humble/setup.bash" >> $GITHUB_ENV
+        echo "ROS_DISTRO=humble" >> $GITHUB_ENV
+        echo "PYTHONPATH=$PYTHONPATH:/opt/ros/humble/lib/python3.10/site-packages" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/ros/humble/lib" >> $GITHUB_ENV
 
     - name: Run linting
       shell: bash
