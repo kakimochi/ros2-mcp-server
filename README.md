@@ -219,3 +219,227 @@ Note that this project uses [FastMCP](https://github.com/jlowin/fastmcp), which 
 
 ## Acknowledgments
 - Built with [FastMCP](https://github.com/jlowin/fastmcp) and [ROS 2](https://docs.ros.org).
+
+---
+
+# ros2-mcp-server
+
+`ros2-mcp-server`は、Model Context Protocol（MCP）とROS 2を統合するPythonベースのサーバーで、AIアシスタントがROS 2トピックを介してロボットを制御できるようにします。FastMCPを通じてコマンドを処理し、ROS 2ノードとして実行され、ロボットの動きを制御するために`geometry_msgs/Twist`メッセージを`/cmd_vel`トピックに発行します。
+
+この実装では、「0.2 m/sで5秒間前進して停止する」などのコマンドをサポートし、`/cmd_vel`パブリッシャーは`pub_cmd_vel`という名前で動作します。
+
+## 機能
+- **MCP統合**: FastMCPを使用してMCPクライアント（Claude等）からのコマンドを処理します。
+- **ROS 2ネイティブ**: ROS 2ノードとして動作し、`/cmd_vel`に直接発行します。
+- **時間ベースの制御**: 時間指定の移動コマンド（例：指定時間移動して停止）をサポートします。
+- **非同期処理**: FastMCPの`asyncio`とROS 2のイベントループを組み合わせて効率的に動作します。
+
+## 前提条件
+- **ROS 2**: Humbleディストリビューションがインストールされ、ソースされていること。
+- **Python**: バージョン3.10（ROS 2 Humbleとの互換性のために必要）。
+- **uv**: 依存関係管理のためのPythonパッケージマネージャー。
+- **依存関係**:
+  - `rclpy`: ROS 2 Pythonクライアントライブラリ（ROS 2と共にインストール）。
+  - `fastmcp`: MCPサーバー実装のためのFastMCPフレームワーク。
+  - `numpy`: ROS 2メッセージタイプに必要。
+
+## インストール
+
+1. **リポジトリのクローン**:
+   ```bash
+   git clone https://github.com/kakimochi/ros2-mcp-server.git
+   cd ros2-mcp-server
+   ```
+
+2. **Pythonバージョンの設定**:
+   このプロジェクトはROS 2 Humbleが必要とするPython 3.10を使用します。`.python-version`ファイルは既に設定されています：
+   ```bash
+   # .python-versionの内容
+   3.10
+   ```
+
+3. **プロジェクトの依存関係**:
+   `pyproject.toml`ファイルには必要な依存関係が設定されています：
+   ```toml
+   # pyproject.tomlの内容
+   [project]
+   name = "ros2-mcp-server"
+   version = "0.1.0"
+   description = "ROS 2 MCP Server"
+   readme = "README.md"
+   requires-python = ">=3.10"
+   dependencies = [
+       "fastmcp",
+       "numpy",
+   ]
+   ```
+
+4. **uv環境の作成**:
+   ```bash
+   uv venv --python /usr/bin/python3.10
+   ```
+
+5. **仮想環境のアクティベーション**:
+   ```bash
+   source .venv/bin/activate
+   ```
+   コマンドプロンプトの先頭に`(.venv)`が表示され、仮想環境がアクティブであることを示します。
+
+6. **依存関係のインストール**:
+   ```bash
+   uv pip install -e .
+   ```
+
+## MCPサーバーの設定
+
+このサーバーをClaudeや他のMCPクライアントで使用するには、MCPサーバーとして設定する必要があります。設定方法は以下の通りです：
+
+### Claude Desktop向け
+
+1. Claude Desktopの設定を開き、MCPサーバーセクションに移動します。
+2. 以下の設定で新しいMCPサーバーを追加します：
+   ```json
+   "ros2-mcp-server": {
+     "autoApprove": [],
+     "disabled": false,
+     "timeout": 60,
+     "command": "uv",
+     "args": [
+       "--directory",
+       "/path/to/ros2-mcp-server",
+       "run",
+       "bash",
+       "-c",
+       "export ROS_LOG_DIR=/tmp && source /opt/ros/humble/setup.bash && python3 /path/to/ros2-mcp-server/ros2-mcp-server.py"
+     ],
+     "transportType": "stdio"
+   }
+   ```
+   
+   **重要**: `/path/to/ros2-mcp-server`をリポジトリの実際のパスに置き換えてください。例えば、リポジトリを`/home/user/projects/ros2-mcp-server`にクローンした場合は、そのパスを使用します。
+
+3. 設定を保存し、Claudeを再起動します。
+
+### Cline（VSCode拡張機能）向け
+
+1. VSCodeで、サイドバーのClineアイコンをクリックしてCline拡張機能の設定を開きます。
+2. MCPサーバー設定セクションに移動します。
+3. 以下の設定で新しいMCPサーバーを追加します：
+   ```json
+   "ros2-mcp-server": {
+     "autoApprove": [],
+     "disabled": false,
+     "timeout": 60,
+     "command": "uv",
+     "args": [
+       "--directory",
+       "/path/to/ros2-mcp-server",
+       "run",
+       "bash",
+       "-c",
+       "export ROS_LOG_DIR=/tmp && source /opt/ros/humble/setup.bash && python3 /path/to/ros2-mcp-server/ros2-mcp-server.py"
+     ],
+     "transportType": "stdio"
+   }
+   ```
+   
+   **重要**: `/path/to/ros2-mcp-server`をリポジトリの実際のパスに置き換えてください（Claude Desktopの例と同様）。
+
+4. VSCodeやエクステンションを再起動することなく、Cline MCP設定インターフェースから直接サーバーのオン/オフを切り替えたり、接続を確認したりすることができます。
+
+## 使用方法
+
+MCPサーバーが設定されたら、Claudeを使用してロボットにコマンドを送信できます：
+
+1. **コマンド例**:
+   Claudeに0.2 m/sで5秒間前進するよう指示します：
+   ```
+   ロボットを0.2 m/sで5秒間前進させてください。
+   ```
+
+2. **ツールの直接使用**:
+   `move_robot`ツールを直接使用することもできます：
+   ```json
+   {
+     "linear": [0.2, 0.0, 0.0],
+     "angular": [0.0, 0.0, 0.0],
+     "duration": 5.0
+   }
+   ```
+
+3. **ROS 2トピックの監視**:
+   `/cmd_vel`トピックの出力を確認します：
+   ```bash
+   ros2 topic echo /cmd_vel
+   ```
+
+## テスト
+
+1. **シミュレータでのテスト**:
+   - ROS 2互換のシミュレータ（例：TurtleBot3を使用したGazebo）を起動します：
+     ```bash
+     export TURTLEBOT3_MODEL=burger
+     ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
+     ```
+   - Claudeを使用して移動コマンドを送信します。
+   - Gazeboでロボットが動くのを観察します。
+
+2. **実機ロボットでのテスト**:
+   - ロボットが`/cmd_vel`トピックを購読するように適切に設定されていることを確認します。
+   - Claudeを使用して移動コマンドを送信します。
+   - ロボットはコマンドに従って動くはずです。
+
+3. **期待される出力**:
+   - サーバーは移動コマンドと停止コマンドをログに記録します。
+   - Claudeは「Successfully moved for 5.0 seconds and stopped」のようなレスポンスを受け取ります。
+
+## トラブルシューティング
+
+- **ROS 2ロギングエラー**: ロギングディレクトリのエラーが発生した場合は、`ROS_LOG_DIR`環境変数が書き込み可能なディレクトリ（例：`/tmp`）に設定されていることを確認してください。
+- **Pythonバージョンの不一致**: ROS 2 HumbleはPython 3.10用に構築されているため、Python 3.10を使用していることを確認してください。
+- **接続エラー**: Claudeが「Connection closed」エラーを報告する場合は、MCPサーバーの設定が正しいこと、およびすべての依存関係がインストールされていることを確認してください。
+
+## ディレクトリ構造
+```
+ros2-mcp-server/
+├── ros2-mcp-server.py  # FastMCPとROS 2を統合するメインサーバースクリプト
+├── pyproject.toml      # プロジェクトの依存関係とメタデータ
+├── .python-version     # Pythonバージョンの指定
+├── .gitignore          # Gitの無視ファイル
+└── README.md           # このファイル
+```
+
+## 制限事項
+- **単一トピック**: 現在は`Twist`メッセージを使用した`/cmd_vel`のみをサポートしています。他のトピックやサービスについては`ros2-mcp-server.py`を拡張してください。
+- **基本的なコマンド**: 現在は単純な移動コマンドをサポートしています。より複雑な動作には追加の実装が必要です。
+
+## ライセンス
+
+```
+MIT License
+
+Copyright (c) 2025 kakimochi
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+このプロジェクトは[FastMCP](https://github.com/jlowin/fastmcp)を使用しており、Apache License 2.0の下でライセンスされています。そのライセンスの条件もFastMCPコンポーネントの使用に適用されます。
+
+## 謝辞
+- [FastMCP](https://github.com/jlowin/fastmcp)と[ROS 2](https://docs.ros.org)を使用して構築されています。
