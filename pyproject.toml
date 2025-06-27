@@ -1,7 +1,7 @@
 [project]
 name = "ros2-mcp-server"
 version = "0.1.0"
-description = "Add your description here"
+description = "Python-based server that integrates the Model Context Protocol (MCP) with ROS 2, enabling AI assistants to control robots via ROS 2 topics"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

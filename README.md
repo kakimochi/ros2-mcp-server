@@ -21,6 +21,16 @@ This implementation supports commands like "move forward at 0.2 m/s for 5 second
 
 ## Installation
 
+### Option 1: DXT Installation (Recommended)
+
+For desktop applications that support DXT format (like Claude Desktop), you can install this MCP server with one click:
+
+1. Download the latest release as a `.dxt` file
+2. Double-click the `.dxt` file or use your desktop application's extension installer
+3. The server will be automatically configured and ready to use
+
+### Option 2: Manual Installation
+
 1. **Clone the Repository**:
    ```bash
    git clone https://github.com/kakimochi/ros2-mcp-server.git
@@ -67,6 +77,12 @@ This implementation supports commands like "move forward at 0.2 m/s for 5 second
    ```
 
 ## MCP Server Configuration
+
+### DXT Configuration (Automatic)
+
+If you installed via DXT format, the server is automatically configured. No additional setup is required.
+
+### Manual Configuration
 
 To use this server with Claude or other MCP clients, you need to configure it as an MCP server. Here's how to set it up:
 
@@ -179,11 +195,25 @@ Once the MCP server is configured, you can use Claude to send commands to the ro
 ```
 ros2-mcp-server/
 ├── ros2-mcp-server.py  # Main server script integrating FastMCP and ROS 2
+├── manifest.json       # DXT manifest for desktop extension packaging
 ├── pyproject.toml      # Project dependencies and metadata
 ├── .python-version     # Python version specification
 ├── .gitignore          # Git ignore file
 └── README.md           # This file
 ```
+
+## DXT Format Support
+
+This MCP server supports the Desktop Extensions (DXT) format for easy installation in desktop applications. The `manifest.json` file contains all necessary configuration for DXT packaging.
+
+### Creating a DXT Package
+
+To create a `.dxt` package for distribution:
+
+1. Ensure all files are in the repository root
+2. Create a zip archive containing all project files
+3. Rename the `.zip` file to `.dxt`
+4. The package can now be installed in DXT-compatible applications
 
 ## Limitations
 - **Single Topic**: Currently supports `/cmd_vel` with `Twist` messages. Extend `ros2-mcp-server.py` for other topics or services.
