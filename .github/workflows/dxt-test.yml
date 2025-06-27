@@ -1,0 +1,164 @@
+name: DXT Testing
+
+on:
+  push:
+    branches: [ main, feature-introduce-dxt-format-* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  dxt-validation:
+    runs-on: ubuntu-latest
+    name: DXT Manifest Validation
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Validate manifest.json syntax
+      run: |
+        echo "🔍 Validating manifest.json syntax..."
+        python -m json.tool manifest.json > /dev/null
+        echo "✅ manifest.json is valid JSON"
+    
+    - name: Check DXT required fields
+      run: |
+        echo "🔍 Checking DXT required fields..."
+        python -c "
+        import json
+        with open('manifest.json') as f:
+            manifest = json.load(f)
+        
+        required_fields = ['dxt_version', 'name', 'version', 'description', 'author', 'server']
+        missing = [f for f in required_fields if f not in manifest]
+        if missing:
+            raise ValueError(f'Missing required fields: {missing}')
+        
+        server = manifest.get('server', {})
+        if server.get('type') != 'python':
+            raise ValueError('Server type must be python')
+        
+        if 'mcp_config' not in server:
+            raise ValueError('Missing mcp_config in server section')
+        
+        mcp_config = server['mcp_config']
+        if mcp_config.get('command') != 'python':
+            raise ValueError('mcp_config command must be python')
+        
+        if not mcp_config.get('args') or '\${__dirname}/ros2-mcp-server.py' not in str(mcp_config['args']):
+            raise ValueError('mcp_config args must include \${__dirname}/ros2-mcp-server.py')
+        
+        print('✅ All DXT required fields are present and valid')
+        "
+    
+    - name: Install dependencies
+      run: |
+        echo "📦 Installing dependencies..."
+        python -m pip install --upgrade pip
+        pip install uv
+        uv venv --python python3.10
+        source .venv/bin/activate
+        uv pip install -e .
+        echo "✅ Dependencies installed"
+    
+    - name: Validate Python server syntax
+      run: |
+        echo "🔍 Validating ros2-mcp-server.py syntax..."
+        python -c "
+        with open('ros2-mcp-server.py', 'r') as f:
+            code = f.read()
+        compile(code, 'ros2-mcp-server.py', 'exec')
+        print('✅ ros2-mcp-server.py syntax is valid')
+        "
+    
+    - name: Check server components
+      run: |
+        echo "🔍 Checking server components..."
+        python -c "
+        with open('ros2-mcp-server.py', 'r') as f:
+            code = f.read()
+        
+        required_components = ['ROS2MCPNode', 'FastMCP', 'move_robot']
+        missing = [comp for comp in required_components if comp not in code]
+        if missing:
+            raise ValueError(f'Missing components: {missing}')
+        
+        print('✅ All required server components found')
+        "
+
+  dxt-package:
+    runs-on: ubuntu-latest
+    name: DXT Package Creation
+    needs: dxt-validation
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Create DXT package
+      run: |
+        echo "📦 Creating DXT package..."
+        zip -r ros2-mcp-server.dxt . -x "*.git*" "*__pycache__*" "*.pyc" ".venv/*" "*.yml"
+        ls -la ros2-mcp-server.dxt
+        echo "✅ DXT package created successfully"
+    
+    - name: Validate DXT package structure
+      run: |
+        echo "🔍 Validating DXT package structure..."
+        unzip -l ros2-mcp-server.dxt | grep -E "(manifest\.json|ros2-mcp-server\.py|README\.md|pyproject\.toml)"
+        echo "✅ DXT package contains required files"
+    
+    - name: Upload DXT package as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ros2-mcp-server-dxt
+        path: ros2-mcp-server.dxt
+        retention-days: 30
+
+  integration-test:
+    runs-on: ubuntu-latest
+    name: Integration Test (without ROS2)
+    needs: dxt-validation
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install uv
+        uv venv --python python3.10
+        source .venv/bin/activate
+        uv pip install -e .
+    
+    - name: Test import capabilities (without ROS2)
+      run: |
+        echo "🔍 Testing import capabilities..."
+        source .venv/bin/activate
+        python -c "
+        import sys
+        sys.path.insert(0, '.')
+        
+        # Test that we can import required modules
+        try:
+            import fastmcp
+            print('✅ FastMCP import successful')
+        except ImportError as e:
+            print(f'⚠️  FastMCP import failed: {e}')
+        
+        # Test server file compilation
+        with open('ros2-mcp-server.py', 'r') as f:
+            code = f.read()
+        compile(code, 'ros2-mcp-server.py', 'exec')
+        print('✅ Server compilation successful')
+        
+        print('✅ Integration test completed (ROS2 environment not available)')
+        "

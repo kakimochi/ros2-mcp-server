@@ -1,0 +1,44 @@
+{
+  "dxt_version": "0.1",
+  "name": "ros2-mcp-server",
+  "display_name": "ROS2 MCP Server",
+  "version": "0.1.0",
+  "description": "Python-based server that integrates the Model Context Protocol (MCP) with ROS 2, enabling AI assistants to control robots via ROS 2 topics",
+  "long_description": "ros2-mcp-server is a Python-based server that integrates the Model Context Protocol (MCP) with ROS 2, enabling AI assistants to control robots via ROS 2 topics. It processes commands through FastMCP and runs as a ROS 2 node, publishing geometry_msgs/Twist messages to the /cmd_vel topic to control robot movement. This implementation supports commands like 'move forward at 0.2 m/s for 5 seconds and stop,' with the /cmd_vel publisher named pub_cmd_vel.",
+  "author": {
+    "name": "kakimochi",
+    "url": "https://github.com/kakimochi"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kakimochi/ros2-mcp-server"
+  },
+  "homepage": "https://github.com/kakimochi/ros2-mcp-server",
+  "documentation": "https://github.com/kakimochi/ros2-mcp-server#readme",
+  "support": "https://github.com/kakimochi/ros2-mcp-server/issues",
+  "keywords": ["ros2", "mcp", "robotics", "automation", "fastmcp"],
+  "license": "MIT",
+  "server": {
+    "type": "python",
+    "entry_point": "ros2-mcp-server.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["${__dirname}/ros2-mcp-server.py"],
+      "env": {
+        "ROS_LOG_DIR": "/tmp"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "move_robot",
+      "description": "Send movement commands to the robot for a specified duration"
+    }
+  ],
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "python": ">=3.10"
+    }
+  }
+}
