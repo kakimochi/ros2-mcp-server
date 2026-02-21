@@ -4,6 +4,10 @@
 
 This implementation supports commands like "move forward at 0.2 m/s for 5 seconds and stop," with the `/cmd_vel` publisher named `pub_cmd_vel`.
 
+<a href="https://glama.ai/mcp/servers/@kakimochi/ros2-mcp-server">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@kakimochi/ros2-mcp-server/badge" alt="ROS2 Server MCP server" />
+</a>
+
 ## Features
 - **MCP Integration**: Uses FastMCP to handle commands from MCP clients (e.g., Claude).
 - **ROS 2 Native**: Operates as a ROS 2 node, directly publishing to `/cmd_vel`.
