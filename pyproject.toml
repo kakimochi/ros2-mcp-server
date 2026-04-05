@@ -1,10 +1,14 @@
 [project]
 name = "ros2-mcp-server"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.2.0"
+description = "Dynamic ROS2 MCP Server with Vision Support"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "fastmcp",
-    "numpy",
+    "numpy<2.0",
+    "opencv-python",
 ]
+
+[tool.setuptools]
+py-modules = ["config", "message_utils"]

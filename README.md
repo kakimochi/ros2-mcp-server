@@ -1,195 +1,311 @@
 # ros2-mcp-server
 
-`ros2-mcp-server` is a Python-based server that integrates the Model Context Protocol (MCP) with ROS 2, enabling AI assistants to control robots via ROS 2 topics. It processes commands through FastMCP and runs as a ROS 2 node, publishing `geometry_msgs/Twist` messages to the `/cmd_vel` topic to control robot movement.
+A **dynamic ROS2 MCP (Model Context Protocol) server** with vision support that enables AI assistants like Claude to interact with any ROS2 topic, discover available topics, subscribe to real-time data streams, and process camera images.
 
-This implementation supports commands like "move forward at 0.2 m/s for 5 seconds and stop," with the `/cmd_vel` publisher named `pub_cmd_vel`.
+## 🚀 Features
 
-## Features
-- **MCP Integration**: Uses FastMCP to handle commands from MCP clients (e.g., Claude).
-- **ROS 2 Native**: Operates as a ROS 2 node, directly publishing to `/cmd_vel`.
-- **Time-Based Control**: Supports duration-based movement commands (e.g., move for a specified time and stop).
-- **Asynchronous Processing**: Combines FastMCP's `asyncio` with ROS 2's event loop for efficient operation.
+### Core Capabilities
+- **Dynamic Topic Management**: Publish to and subscribe from any ROS2 topic at runtime
+- **Topic Discovery**: List all available topics with their message types
+- **Vision Support**: Process camera images with vision-capable LLMs (Claude Vision, GPT-4V, etc.)
+- **Message Buffering**: Subscribe to topics and retrieve recent messages on-demand
+- **Flexible Publishing**: One-shot or duration-based publishing to any topic
+- **Backward Compatible**: Maintains support for the original `move_robot` tool
 
-## Prerequisites
-- **ROS 2**: Humble distribution installed and sourced.
-- **Python**: Version 3.10 (required for compatibility with ROS 2 Humble).
-- **uv**: Python package manager for dependency management.
+### MCP Tools (8 total)
+1. `list_topics` - Discover all available ROS2 topics
+2. `get_topic_info` - Get detailed information about a specific topic
+3. `publish_message` - Publish to any ROS2 topic with any message type  
+4. `subscribe_topic` - Subscribe to a topic and buffer messages
+5. `get_messages` - Retrieve buffered messages from a subscribed topic
+6. `unsubscribe_topic` - Unsubscribe and clear buffer
+7. `get_camera_image` - Get base64-encoded camera images for vision LLMs
+8. `move_robot` - Legacy tool for robot movement (backward compatible)
+
+## 📋 Prerequisites
+
+- **ROS2**: Humble distribution installed and sourced
+- **Python**: Version 3.10 (required for ROS2 Humble compatibility)
+- **uv**: Python package manager ([install uv](https://docs.astral.sh/uv/getting-started/installation/))
 - **Dependencies**:
-  - `rclpy`: ROS 2 Python client library (installed with ROS 2).
-  - `fastmcp`: FastMCP framework for MCP server implementation.
-  - `numpy`: Required by ROS 2 message types.
+  - `rclpy` (installed with ROS2)
+  - `cv_bridge` (installed with ROS2)
+  - `fastmcp`
+  - `numpy`
+  - `opencv-python`
 
-## Installation
+## 📦 Installation
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/kakimochi/ros2-mcp-server.git
+   cd ~/tools  # or your preferred directory
+   git clone https://github.com/hawk200545/ros2-mcp-server.git
    cd ros2-mcp-server
    ```
 
-2. **Python Version Configuration**:
-   This project uses Python 3.10 as required by ROS 2 Humble. The `.python-version` file is already configured:
-   ```bash
-   # .python-version content
-   3.10
-   ```
-
-3. **Project Dependencies**:
-   The `pyproject.toml` file is configured with the necessary dependencies:
-   ```toml
-   # pyproject.toml content
-   [project]
-   name = "ros2-mcp-server"
-   version = "0.1.0"
-   description = "ROS 2 MCP Server"
-   readme = "README.md"
-   requires-python = ">=3.10"
-   dependencies = [
-       "fastmcp",
-       "numpy",
-   ]
-   ```
-
-4. **Create uv Environment**:
+2. **Create Virtual Environment**:
    ```bash
    uv venv --python /usr/bin/python3.10
    ```
 
-5. **Activate the Virtual Environment**:
+3. **Activate the Virtual Environment**:
    ```bash
    source .venv/bin/activate
    ```
-   You'll see `(.venv)` appear at the beginning of your command prompt, indicating that the virtual environment is active.
 
-6. **Install Dependencies**:
+4. **Install Dependencies**:
    ```bash
    uv pip install -e .
    ```
 
-## MCP Server Configuration
-
-To use this server with Claude or other MCP clients, you need to configure it as an MCP server. Here's how to set it up:
+## ⚙️ MCP Server Configuration
 
 ### For Claude Desktop
 
-1. Open Claude Desktop settings and navigate to the MCP servers section.
-2. Add a new MCP server with the following configuration:
-   ```json
-   "ros2-mcp-server": {
-     "autoApprove": [],
-     "disabled": false,
-     "timeout": 60,
-     "command": "uv",
-     "args": [
-       "--directory",
-       "/path/to/ros2-mcp-server",
-       "run",
-       "bash",
-       "-c",
-       "export ROS_LOG_DIR=/tmp && source /opt/ros/humble/setup.bash && python3 /path/to/ros2-mcp-server/ros2-mcp-server.py"
-     ],
-     "transportType": "stdio"
-   }
-   ```
-   
-   **Important**: Replace `/path/to/ros2-mcp-server` with the actual path to your repository. For example, if you cloned the repository to `/home/user/projects/ros2-mcp-server`, you would use that path instead.
+1. Open Claude Desktop settings → MCP servers section
+2. Add the configuration:
 
-3. Save the configuration and restart Claude.
+```json
+{
+  "ros2-mcp-server": {
+    "command": "uv",
+    "args": [
+      "--directory",
+      "/home/YOUR_USERNAME/tools/ros2-mcp-server",
+      "run",
+      "bash",
+      "-c",
+      "export ROS_LOG_DIR=/tmp && source /opt/ros/humble/setup.bash && python3 ros2-mcp-server.py"
+    ],
+    "transportType": "stdio"
+  }
+}
+```
+
+**Important**: Replace `/home/YOUR_USERNAME/tools/ros2-mcp-server` with your actual path.
+
+3. Restart Claude Desktop
 
 ### For Cline (VSCode Extension)
 
-1. In VSCode, open the Cline extension settings by clicking on the Cline icon in the sidebar.
-2. Navigate to the MCP servers configuration section.
-3. Add a new MCP server with the following configuration:
-   ```json
-   "ros2-mcp-server": {
-     "autoApprove": [],
-     "disabled": false,
-     "timeout": 60,
-     "command": "uv",
-     "args": [
-       "--directory",
-       "/path/to/ros2-mcp-server",
-       "run",
-       "bash",
-       "-c",
-       "export ROS_LOG_DIR=/tmp && source /opt/ros/humble/setup.bash && python3 /path/to/ros2-mcp-server/ros2-mcp-server.py"
-     ],
-     "transportType": "stdio"
-   }
-   ```
-   
-   **Important**: Replace `/path/to/ros2-mcp-server` with the actual path to your repository, as in the Claude Desktop example.
+Same configuration as Claude Desktop. Add to Cline's MCP settings and toggle the server on.
 
-4. You can immediately toggle the server on/off and verify the connection directly from the Cline MCP settings interface without needing to restart VSCode or reload the extension.
+## 💡 Usage Examples
 
-## Usage
+### Example 1: Topic Discovery
+**User**: "What ROS2 topics are available?"
 
-Once the MCP server is configured, you can use Claude to send commands to the robot:
+**Claude calls**: `list_topics()`
 
-1. **Example Command**:
-   Ask Claude to move the robot forward at 0.2 m/s for 5 seconds:
-   ```
-   Please make the robot move forward at 0.2 m/s for 5 seconds.
-   ```
+**Result**: Lists all topics like `/cmd_vel`, `/odom`, `/camera/image_raw`, etc.
 
-2. **Direct Tool Usage**:
-   You can also use the `move_robot` tool directly:
-   ```json
-   {
-     "linear": [0.2, 0.0, 0.0],
-     "angular": [0.0, 0.0, 0.0],
-     "duration": 5.0
-   }
-   ```
+---
 
-3. **Monitor ROS 2 Topics**:
-   Verify the `/cmd_vel` topic output:
-   ```bash
-   ros2 topic echo /cmd_vel
-   ```
+### Example 2: Publish a Setpoint (Drone Hovering)
+**User**: "Make the drone hover at position (2, 3, 5)"
 
-## Testing
+**Claude calls**:
+```python
+publish_message(
+    topic="/drone/setpoint",
+    message_type="geometry_msgs/msg/Point",
+    data={"x": 2.0, "y": 3.0, "z": 5.0}
+)
+```
 
-1. **With a Simulator**:
-   - Launch a ROS 2-compatible simulator (e.g., Gazebo with TurtleBot3):
-     ```bash
-     export TURTLEBOT3_MODEL=burger
-     ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
-     ```
-   - Use Claude to send movement commands.
-   - Observe the robot moving in Gazebo.
+**Result**: Publishes the setpoint once. Your PID controller (running separately) handles the real-time control loop.
 
-2. **With a Real Robot**:
-   - Ensure your robot is properly set up to subscribe to the `/cmd_vel` topic.
-   - Use Claude to send movement commands.
-   - The robot should move according to the commands.
+---
 
-3. **Expected Output**:
-   - The server logs movement commands and stop commands.
-   - Claude receives a response like: `"Successfully moved for 5.0 seconds and stopped"`.
+### Example 3: Subscribe and Monitor Position
+**User**: "Subscribe to the drone's position and tell me where it is"
 
-## Troubleshooting
+**Claude calls**:
+```python
+# First subscribe
+subscribe_topic(topic="/whycon/poses", buffer_size=10)
 
-- **ROS 2 Logging Errors**: If you encounter logging directory errors, ensure the `ROS_LOG_DIR` environment variable is set to a writable directory (e.g., `/tmp`).
-- **Python Version Mismatch**: Ensure you're using Python 3.10, as ROS 2 Humble is built for this version.
-- **Connection Errors**: If Claude reports "Connection closed" errors, check that the MCP server configuration is correct and that all dependencies are installed.
+# Then get messages after a moment
+get_messages(topic="/whycon/poses", count=1)
+```
 
-## Directory Structure
+**Result**: Returns the latest position data in JSON format.
+
+---
+
+### Example 4: Vision-Based Navigation
+**User**: "Look at the camera and tell me what's ahead"
+
+**Claude calls**:
+```python
+get_camera_image(topic="/camera/image_raw", encoding="jpeg")
+```
+
+**Result**: Returns base64-encoded image. Claude Vision analyzes it and reports:
+> "I can see an indoor corridor with clear path ahead. There's a red marker on the left wall about 3 meters away."
+
+---
+
+### Example 5: Move Robot (Backward Compatible)
+**User**: "Move the robot forward at 0.3 m/s for 3 seconds"
+
+**Claude calls**:
+```python
+move_robot(
+    linear=[0.3, 0.0, 0.0],
+    angular=[0.0, 0.0, 0.0],
+    duration=3.0
+)
+```
+
+**Result**: Robot moves forward for 3 seconds, then stops.
+
+---
+
+## 🎯 LLM as High-Level Controller
+
+### Recommended Architecture
+
+```mermaid
+graph LR
+    A[LLM via MCP] -->|Setpoints| B[/drone/setpoint]
+    C[/whycon/poses] -->|Position| D[pico_controller_PID.py]
+    B --> D
+    D -->|50+ Hz| E[/rc_command]
+    E --> F[Drone]
+    F -->|Feedback| C
+```
+
+**Key Principle**: The LLM publishes **setpoints** (waypoints), not real-time control commands. Your existing PID controller handles the fast closed-loop control.
+
+#### Why This Works
+- **LLM Speed**: 500-2000ms inference time ❌ Too slow for real-time control
+- **PID Speed**: < 20ms loop time ✅ Perfect for real-time control
+- **Solution**: LLM → Strategic decisions | PID → Tactical execution
+
+### Example Workflow
+1. **LLM**: Analyzes camera image, sees target
+2. **LLM**: Calculates waypoint, publishes to `/drone/setpoint`
+3. **PID Controller**: Continuously reads `/whycon/poses` and `/drone/setpoint`
+4. **PID Controller**: Publishes `/rc_command` at 50 Hz to reach setpoint
+5. **LLM**: Monitors progress by checking `/whycon/poses` occasionally
+
+## 🧪 Testing
+
+### With TurtleBot3 Gazebo Simulator
+
+```bash
+# Terminal 1: Launch simulator
+export TURTLEBOT3_MODEL=burger
+ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
+
+# Terminal 2: Start MCP server (if testing manually)
+source /opt/ros/humble/setup.bash
+cd ~/tools/ros2-mcp-server
+source .venv/bin/activate
+python3 ros2-mcp-server.py
+
+# Terminal 3: Monitor topics
+ros2 topic list
+ros2 topic echo /cmd_vel
+```
+
+Then use Claude to send commands!
+
+### Test Commands for Claude
+
+```
+1. "List all available ROS2 topics"
+2. "Subscribe to /odom and show me the robot's current position"
+3. "Publish a velocity command to move the robot forward at 0.2 m/s for 5 seconds"
+4. "What information is available on the /scan topic?"
+```
+
+## 📁 Project Structure
+
 ```
 ros2-mcp-server/
-├── ros2-mcp-server.py  # Main server script integrating FastMCP and ROS 2
-├── pyproject.toml      # Project dependencies and metadata
-├── .python-version     # Python version specification
-├── .gitignore          # Git ignore file
-└── README.md           # This file
+├── ros2-mcp-server.py    # Main MCP server with ROS2 node
+├── message_utils.py       # Message conversion utilities
+├── config.py              # Configuration parameters
+├── pyproject.toml         # Project dependencies
+├── .python-version        # Python version specification
+└── README.md              # This file
 ```
 
-## Limitations
-- **Single Topic**: Currently supports `/cmd_vel` with `Twist` messages. Extend `ros2-mcp-server.py` for other topics or services.
-- **Basic Commands**: Currently supports simple movement commands. More complex behaviors would require additional implementation.
+## 🔧 Supported Message Types
 
-## License
+The server dynamically handles message types, with pre-validated support for:
+
+- `geometry_msgs/msg/Twist` - Robot velocity control
+- `geometry_msgs/msg/Point` - 3D coordinates (setpoints)
+- `geometry_msgs/msg/Pose` - Position + orientation
+- `geometry_msgs/msg/PoseArray` - Multiple poses (e.g., `/whycon/poses`)
+- `std_msgs/msg/String` - Text messages
+- `std_msgs/msg/Int32`, `Float64`, `Bool` - Primitive types
+- `sensor_msgs/msg/Image` - Camera images (base64 encoding)
+- `nav_msgs/msg/Odometry` - Robot pose and velocity
+
+**Any ROS2 message type can be used** - just specify the full type string (e.g., `'custom_msgs/msg/MyMessage'`).
+
+## 🐛 Troubleshooting
+
+### ROS2 Logging Errors
+If you see logging directory errors:
+```bash
+export ROS_LOG_DIR=/tmp
+```
+
+### Python Version Mismatch
+Ensure you're using Python 3.10:
+```bash
+python3 --version  # Should show 3.10.x
+```
+
+### Import Errors
+If message types can't be imported, ensure the package is sourced:
+```bash
+source /opt/ros/humble/setup.bash
+```
+
+### Vision/Image Errors
+```bash
+# Ensure cv_bridge is available
+python3 -c "from cv_bridge import CvBridge"
+
+# Install opencv if needed
+uv pip install opencv-python
+```
+
+### MCP Connection Issues
+- Check Claude/Cline logs for connection errors
+- Verify the path in MCP configuration is correct
+- Ensure ROS2 is sourced in the startup command
+- Check that port isn't blocked by firewall
+
+## 🗺️ Roadmap
+
+### Phase 1: ✅ Complete
+- Dynamic topic publishing/subscribing
+- Topic discovery
+- Vision support (base64 images)
+- Message buffering
+
+### Phase 2: Performance Optimization (Planned)
+- Message compression for large data
+- Selective buffering with filters
+- Rate limiting for high-frequency topics
+
+### Phase 3: Multi-Robot Support (Planned)
+- Robot namespace handling
+- Multiple ROS2 domain IDs
+
+### Phase 4: Full ROS2 Ecosystem (Planned)
+- Service calls
+- Action clients
+- Parameter management
+
+## 📄 License
 
 ```
 MIT License
@@ -215,7 +331,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-Note that this project uses [FastMCP](https://github.com/jlowin/fastmcp), which is licensed under the Apache License 2.0. The terms of that license also apply to the use of FastMCP components.
+Note: This project uses [FastMCP](https://github.com/jlowin/fastmcp) (Apache License 2.0).
 
-## Acknowledgments
-- Built with [FastMCP](https://github.com/jlowin/fastmcp) and [ROS 2](https://docs.ros.org).
+## 🙏 Acknowledgments
+
+- Built with [FastMCP](https://github.com/jlowin/fastmcp) and [ROS2](https://docs.ros.org)
+- Original project by [kakimochi](https://github.com/kakimochi/ros2-mcp-server)
+- Enhanced with dynamic topic management and vision support
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit issues or pull requests.
+
+---
+
+**Happy robot controlling with LLMs! 🤖🧠**
